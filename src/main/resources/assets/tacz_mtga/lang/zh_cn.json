@@ -1,0 +1,16 @@
+{
+    "entity.tacz_mtga.turret": "自动化炮台",
+    "item.tacz_mtga.turret": "自动化炮台",
+    "item.tacz_mtga.turret.desc": "本天才做的最强炮台！",
+    "item.tacz_mtga.veteran_turret": "老兵级自动化炮台",
+    "item.tacz_mtga.veteran_turret.desc": "身经百战的最强炮台！",
+    "entity.tacz_mtga.wooden_turret": "简易木质炮台",
+    "item.tacz_mtga.wooden_turret": "简易木质炮台",
+    "item.tacz_mtga.wooden_turret.desc": "笨蛋才用木头做炮台！",
+    "item.tacz_mtga.upgrade_range": "火控雷达",
+    "item.tacz_mtga.upgrade_range.desc": "看招！本天才看得很远！",
+    "item.tacz_mtga.upgrade_speed": "水冷系统",
+    "item.tacz_mtga.upgrade_speed.desc": "冷冰冰的才最强！哒哒哒！",
+    "item.tacz_mtga.upgrade_ammo": "弹药制造工厂",
+    "item.tacz_mtga.upgrade_ammo.desc": "子弹无限！虽然刮痧但本天才最强！"
+}

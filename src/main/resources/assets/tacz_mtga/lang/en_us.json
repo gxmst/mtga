@@ -1,0 +1,16 @@
+{
+    "entity.tacz_mtga.turret": "Turret",
+    "item.tacz_mtga.turret": "Turret",
+    "item.tacz_mtga.turret.desc": "Standard automated defense turret.",
+    "entity.tacz_mtga.wooden_turret": "Wooden Sentry",
+    "item.tacz_mtga.wooden_turret": "Wooden Sentry",
+    "item.tacz_mtga.wooden_turret.desc": "Primitive wooden turret with basic tracking.",
+    "item.tacz_mtga.upgrade_range": "Fire Control Radar",
+    "item.tacz_mtga.upgrade_range.desc": "Enables 'Scope' mode, doubling the turret's range!",
+    "item.tacz_mtga.upgrade_speed": "Water Cooling System",
+    "item.tacz_mtga.upgrade_speed.desc": "Makes your turret smoking fast, increasing fire rate by 20%!",
+    "item.tacz_mtga.upgrade_ammo": "Ammo Manufacturing Factory",
+    "item.tacz_mtga.upgrade_ammo.desc": "Provides infinite ammo but reduces damage to 15%.",
+    "item.tacz_mtga.veteran_turret": "Veteran Turret",
+    "item.tacz_mtga.veteran_turret.desc": "Standard turret with 300 pre-installed kills."
+}

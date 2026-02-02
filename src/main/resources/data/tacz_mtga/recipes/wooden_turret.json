@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        " W ",
+        "WGW",
+        " W "
+    ],
+    "key": {
+        "W": {
+            "item": "minecraft:oak_planks"
+        },
+        "G": {
+            "item": "tacz_mtga:wooden_turret"
+        }
+    },
+    "result": {
+        "item": "tacz_mtga:wooden_turret"
+    }
+}
