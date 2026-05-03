@@ -19,13 +19,6 @@ import com.tacz.guns.resource.index.CommonGunIndex;
 import com.tacz.guns.resource.modifier.AttachmentCacheProperty;
 import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
 import com.tacz.guns.resource.pojo.data.gun.GunData;
-import com.tacz.guns.init.ModItems;
-import com.tacz.guns.item.AmmoItem;
-import com.tacz.guns.item.ModernKineticGunItem;
-import com.tacz.guns.resource.index.CommonGunIndex;
-import com.tacz.guns.resource.modifier.AttachmentCacheProperty;
-import com.tacz.guns.resource.modifier.AttachmentPropertyManager;
-import com.tacz.guns.resource.pojo.data.gun.GunData;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -180,9 +173,12 @@ public class TurretEntity extends Mob
     }
 
     public static AttributeSupplier.@NotNull Builder createLivingAttributes() {
-        // Increase FOLLOW_RANGE to support long-range weapons (e.g. Sniper)
+        return createLivingAttributes(200);
+    }
+
+    public static AttributeSupplier.@NotNull Builder createLivingAttributes(double maxHealth) {
         return LivingEntity.createLivingAttributes().add(Attributes.FOLLOW_RANGE, 128).add(Attributes.ARMOR, 6.0D)
-                .add(Attributes.MAX_HEALTH, 200);
+                .add(Attributes.MAX_HEALTH, maxHealth);
     }
 
     @Override
@@ -250,7 +246,9 @@ public class TurretEntity extends Mob
     public void addAdditionalSaveData(@NotNull CompoundTag pCompound) {
         super.addAdditionalSaveData(pCompound);
         pCompound.put("Inventory", inventory.serializeNBT());
-        pCompound.putUUID("Owner", owner);
+        if (owner != null) {
+            pCompound.putUUID("Owner", owner);
+        }
         pCompound.putBoolean("HasRangeUpgrade", entityData.get(HAS_RANGE_UPGRADE));
         pCompound.putBoolean("HasSpeedUpgrade", entityData.get(HAS_SPEED_UPGRADE));
         pCompound.putBoolean("HasAmmoUpgrade", entityData.get(HAS_AMMO_UPGRADE));
@@ -261,7 +259,9 @@ public class TurretEntity extends Mob
     public void readAdditionalSaveData(@NotNull CompoundTag pCompound) {
         super.readAdditionalSaveData(pCompound);
         inventory.deserializeNBT(pCompound.getCompound("Inventory"));
-        owner = pCompound.getUUID("Owner");
+        if (pCompound.hasUUID("Owner")) {
+            owner = pCompound.getUUID("Owner");
+        }
         if (pCompound.contains("HasRangeUpgrade"))
             entityData.set(HAS_RANGE_UPGRADE, pCompound.getBoolean("HasRangeUpgrade"));
         if (pCompound.contains("HasSpeedUpgrade"))
@@ -343,8 +343,9 @@ public class TurretEntity extends Mob
 
     public GunTabType heldGunType() {
         if (this.getMainHandItem().getItem() instanceof ModernKineticGunItem gun) {
-            if (TimelessAPI.getCommonGunIndex(gun.getGunId(this.getMainHandItem())).isPresent()) {
-                return switch (TimelessAPI.getCommonGunIndex(gun.getGunId(this.getMainHandItem())).get().getType()) {
+            Optional<CommonGunIndex> indexOpt = TimelessAPI.getCommonGunIndex(gun.getGunId(this.getMainHandItem()));
+            if (indexOpt.isPresent()) {
+                return switch (indexOpt.get().getType()) {
                     case "pistol" -> GunTabType.PISTOL;
                     case "rifle" -> GunTabType.RIFLE;
                     case "sniper" -> GunTabType.SNIPER;
@@ -352,9 +353,7 @@ public class TurretEntity extends Mob
                     case "rpg" -> GunTabType.RPG;
                     case "shotgun" -> GunTabType.SHOTGUN;
                     case "mg" -> GunTabType.MG;
-                    default ->
-                        throw new IllegalStateException("Unexpected value: "
-                                + TimelessAPI.getCommonGunIndex(gun.getGunId(this.getMainHandItem())).get().getType());
+                    default -> GunTabType.PISTOL;
                 };
             }
         }
@@ -619,9 +618,16 @@ public class TurretEntity extends Mob
         super.tick();
     }
 
+    private void giveOrDrop(Player player, ItemStack stack) {
+        if (stack.isEmpty()) return;
+        if (!player.getInventory().add(stack.copy())) {
+            player.drop(stack.copy(), false);
+        }
+    }
+
     @Override
     protected @NotNull InteractionResult mobInteract(@NotNull Player player, @NotNull InteractionHand hand) {
-        if (player.getUUID() != owner) {
+        if (owner == null || !player.getUUID().equals(owner)) {
             return super.mobInteract(player, hand);
         }
 
@@ -637,12 +643,11 @@ public class TurretEntity extends Mob
 
         // 3. Take Gun (Right Click when armed) - NO SHIFT
         if (!getMainHandItem().isEmpty() && !player.isShiftKeyDown()) {
-            player.getInventory().add(getMainHandItem());
+            giveOrDrop(player, getMainHandItem());
             setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
             for (int slot = 0; slot < inventory.getSlots(); slot++) {
                 if (!inventory.getStackInSlot(slot).isEmpty()) {
-                    player.getInventory()
-                            .add(inventory.extractItem(slot, inventory.getStackInSlot(slot).getCount(), false));
+                    giveOrDrop(player, inventory.extractItem(slot, inventory.getStackInSlot(slot).getCount(), false));
                 }
             }
             return InteractionResult.SUCCESS;
@@ -925,10 +930,15 @@ public class TurretEntity extends Mob
                             ItemStack stack = handler.getStackInSlot(s);
                             if (stack.getItem() instanceof IAmmo ammo && ammo.isAmmoOfGun(getMainHandItem(), stack)
                                     && getStackInSlot(slot).getCount() < getStackInSlot(slot).getMaxStackSize()) {
-                                ItemStack remainder = insertItem(slot, handler.extractItem(s, stack.getCount(), false),
-                                        false);
-                                if (!remainder.isEmpty()) {
-                                    handler.insertItem(s, remainder, false);
+                                int maxAccept = getStackInSlot(slot).getMaxStackSize() - getStackInSlot(slot).getCount();
+                                int toExtract = Math.min(stack.getCount(), maxAccept);
+                                if (toExtract <= 0) continue;
+                                ItemStack extracted = handler.extractItem(s, toExtract, true);
+                                ItemStack leftover = insertItem(slot, extracted, true);
+                                int actuallyAccepted = extracted.getCount() - leftover.getCount();
+                                if (actuallyAccepted > 0) {
+                                    ItemStack realExtracted = handler.extractItem(s, actuallyAccepted, false);
+                                    insertItem(slot, realExtracted, false);
                                 }
                             }
                         }

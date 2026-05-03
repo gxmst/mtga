@@ -11,7 +11,6 @@ public class AttributeRegistry {
     public static void register(EntityAttributeCreationEvent event) {
         event.put(EntityTypeRegistry.TURRET.get(), TurretEntity.createLivingAttributes().build());
         event.put(EntityTypeRegistry.WOODEN_TURRET.get(),
-                TurretEntity.createLivingAttributes()
-                        .add(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, 20.0D).build());
+                TurretEntity.createLivingAttributes(20.0D).build());
     }
 }
